@@ -37,7 +37,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	//fmt.Println(string(responseData))
 	var responseObject Response
 	json.Unmarshal(responseData, &responseObject)
 
