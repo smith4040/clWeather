@@ -7,21 +7,9 @@ import (
 	"log"
 	"net/http"
 	"os"
+
+	"github.com/smith4040/clWeather/dataModel"
 )
-
-type response struct {
-	Context    string     `json:"@context"`
-	ID         string     `json:"id"`
-	NWSType    string     `json:"type"`
-	Geometry   string     `json:"geometry"`
-	Properties properties `json:"properties"`
-}
-
-type properties struct {
-	ID         string `json:"@id"`
-	NWSType    string `json:"@type"`
-	RawMessage string `json:"rawMessage"`
-}
 
 func requestWeather() {
 	weatherResponse, err := http.Get("https://api.weather.gov/stations/kfwb/observations/latest")
@@ -37,7 +25,7 @@ func requestWeather() {
 		log.Fatal(err)
 	}
 
-	var responseObject response
+	var responseObject dataModel.Response
 	json.Unmarshal(responseData, &responseObject)
 
 	fmt.Println(responseObject.ID)
