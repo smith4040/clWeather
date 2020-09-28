@@ -12,7 +12,10 @@ import (
 )
 
 func requestWeather() {
-	weatherResponse, err := http.Get("https://api.weather.gov/stations/kfwb/observations/latest")
+	var stationID string = "kfwb"
+	url := "https://api.weather.gov/stations/" + (stationID) + "/observations/latest"
+
+	weatherResponse, err := http.Get(url)
 
 	if err != nil {
 		fmt.Print(err.Error())
