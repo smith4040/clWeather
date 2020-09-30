@@ -9,7 +9,9 @@ These instructions require your work environment to be setup in accordance with 
 
 For example: `clWeather -s kord` returns the latest weather observation from Chicago O'Hare International Airport.
 
-The program also accepts POSIX/GNU-style --flags, ie: `--station` in place of `-s`.
+Multiple stations can be queried by adding additional stations seperated by commas, i.e.: `clWeather -s kord,kjfk,kbos`
+
+The program also accepts POSIX/GNU-style --flags, i.e.: `--station` in place of `-s`.
 
 
 ## How to Find the Identity of a Station
@@ -19,3 +21,7 @@ The program also accepts POSIX/GNU-style --flags, ie: `--station` in place of `-
 * The four-letter station identifier will be in the top left corner of the view that opens.
 
 
+
+This repository is a work in progress. New features will be added soon, and a more complete test suite is in progress. 
+
+The current output of the response is in METAR format. See https://www.weather.gov/media/wrh/mesowest/metar_decode_key.pdf for help reading and decoding the response. The current plan is to modify the output to be more readable/decoded and add a flag for getting the raw response. 
