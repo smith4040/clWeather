@@ -39,9 +39,6 @@ func requestWeather(stationID string) dataModel.Response {
 	var station dataModel.Response
 	json.Unmarshal(responseData, &station)
 
-	//fmt.Println(station.ID)
-	//fmt.Println(station.Properties.RawMessage)
-
 	return station
 }
 
