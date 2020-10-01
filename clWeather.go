@@ -40,6 +40,12 @@ func requestWeather(stationID string) dataModel.Response {
 	var station dataModel.Response
 	json.Unmarshal(responseData, &station)
 
+	if weatherResponse.StatusCode >= 400 {
+		colour.Red(stationID + ":" + " Weather observation for this station is currently unavialable. Check spelling and try again later.")
+		log.Print("Response status code: ", weatherResponse.StatusCode)
+		return station
+	}
+
 	return station
 }
 
