@@ -26,8 +26,8 @@ The program also accepts POSIX/GNU-style --flags, i.e.: `--station` in place of 
 * Click on one of the pins closest to the location where you want to check the weather
 * The four-letter station identifier will be in the top left corner of the view that opens.
 
+The current output of the response is in METAR format. See https://www.weather.gov/media/wrh/mesowest/metar_decode_key.pdf for help reading and decoding the response. The current plan is to modify the output to be more readable/decoded and add a flag for getting the raw response. 
+
 
 
 This repository is a work in progress. New features will be added soon, and a more complete test suite is in progress. 
-
-The current output of the response is in METAR format. See https://www.weather.gov/media/wrh/mesowest/metar_decode_key.pdf for help reading and decoding the response. The current plan is to modify the output to be more readable/decoded and add a flag for getting the raw response. 
