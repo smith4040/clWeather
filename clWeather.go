@@ -9,6 +9,7 @@ import (
 	"os"
 	"strings"
 
+	colour "github.com/fatih/color"
 	flag "github.com/ogier/pflag"
 	"github.com/smith4040/clWeather/dataModel"
 )
@@ -63,7 +64,7 @@ func main() {
 
 	for _, s := range stations {
 		result := requestWeather(s)
-		fmt.Println(result.Properties.RawMessage)
+		colour.HiGreen(result.Properties.RawMessage)
 		fmt.Println("")
 
 	}
