@@ -4,7 +4,13 @@ clWeather is a command line application that queries the National Weather Servic
 ## How to Use the Application 
 These instructions require your work environment to be setup in accordance with https://golang.org/doc/gopath_code.html
 
-* Clone or fork the repository and then execute the command `go install github.com/{your username}/clWeather`  
+### Installation
+
+* `go get github.com/smith4040/clWeather`
+* `go build` or `go install` the application
+
+### Usage
+
 * Run the command `clWeather -s {four letter station identifier}` 
 
 For example: `clWeather -s kord` returns the latest weather observation from Chicago O'Hare International Airport.
