@@ -28,6 +28,5 @@ The program also accepts POSIX/GNU-style --flags, i.e.: `--station` in place of 
 
 The current output of the response is in METAR format. See https://www.weather.gov/media/wrh/mesowest/metar_decode_key.pdf for help reading and decoding the response. The current plan is to modify the output to be more readable/decoded and add a flag for getting the raw response. 
 
-
-
+##
 This repository is a work in progress. New features will be added soon, and a more complete test suite is in progress. 
