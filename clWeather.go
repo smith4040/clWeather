@@ -14,15 +14,19 @@ import (
 	"github.com/smith4040/clWeather/dataModel"
 )
 
-const (
-	apiURL          = "https://api.weather.gov"
-	stationEndpoint = "/stations/"
-	observationType = "/observations/latest"
-)
+func makeURL(stationID string) string {
+	const (
+		apiURL          = "https://api.weather.gov/stations/"
+		observationType = "/observations/latest"
+	)
+
+	url := apiURL + stationID + observationType
+	return url
+}
 
 func requestWeather(stationID string) dataModel.Response {
-	url := apiURL + stationEndpoint + stationID + observationType
-
+	url := makeURL(stationID)
+	fmt.Println(url)
 	weatherResponse, err := http.Get(url)
 
 	if err != nil {
@@ -56,6 +60,7 @@ var (
 func init() {
 	flag.StringVarP(&statation, "station", "s", "", "Station ID")
 }
+
 func main() {
 	flag.Parse()
 
