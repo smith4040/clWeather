@@ -54,11 +54,11 @@ func requestWeather(stationID string) dataModel.Response {
 }
 
 var (
-	statation string
+	station string
 )
 
 func init() {
-	flag.StringVarP(&statation, "station", "s", "", "Station ID")
+	flag.StringVarP(&station, "station", "s", "", "Station ID")
 }
 
 func main() {
@@ -69,7 +69,7 @@ func main() {
 		printUsage()
 	}
 
-	stations := strings.Split(statation, ",")
+	stations := strings.Split(station, ",")
 	fmt.Printf("Searching station(s): %s\n", stations)
 	fmt.Println("")
 
