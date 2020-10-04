@@ -14,13 +14,13 @@ import (
 	"github.com/smith4040/clWeather/dataModel"
 )
 
-func makeURL(stationID string) string {
+func makeURL(s string) string {
 	const (
 		apiURL          = "https://api.weather.gov/stations/"
 		observationType = "/observations/latest"
 	)
 
-	url := apiURL + stationID + observationType
+	url := apiURL + s + observationType
 	return url
 }
 
