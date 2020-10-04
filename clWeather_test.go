@@ -1,12 +1,23 @@
 package main
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
 
 func TestMakeURL(t *testing.T) {
 	correctURL := "https://api.weather.gov/stations/kfwb/observations/latest"
 	stationID := "kfwb"
 	u := makeURL(stationID)
-	if u != correctURL {
-		t.Errorf("URL was incorrect, got: %s, want: %s.", u, correctURL)
-	}
+	t.Logf("Running test case: TestMakeURL")
+	assert.Equal(t, u, correctURL)
+}
+
+func TestRequestWeather(t *testing.T) {
+
+}
+
+func TestPrintUsage(t *testing.T) {
+
 }
