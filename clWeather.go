@@ -11,7 +11,7 @@ import (
 
 	colour "github.com/fatih/color"
 	flag "github.com/ogier/pflag"
-	"github.com/smith4040/clWeather/dataModel"
+	dataModel "github.com/smith4040/clWeather/datamodel"
 )
 
 func makeURL(s string) string {

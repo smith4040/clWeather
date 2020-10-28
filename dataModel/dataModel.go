@@ -1,4 +1,4 @@
-package dataModel
+package datamodel
 
 //data model for clWeather
 type Response struct {
