@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 
 	colour "github.com/fatih/color"
@@ -49,8 +50,13 @@ func requestWeather(stationID string) dataModel.Response {
 		log.Print("Response status code: ", weatherResponse.StatusCode)
 		return station
 	}
-
 	return station
+}
+
+// CelsiusToFahrenheit converts celsius to fahrenheit.
+func CelsiusToFahrenheit(c int) int {
+	value := ((c * 9 / 5) + 32)
+	return value
 }
 
 var (
@@ -76,8 +82,17 @@ func main() {
 	for _, s := range stations {
 		result := requestWeather(s)
 		colour.HiGreen(result.Properties.RawMessage)
-		fmt.Println("")
 
+		if result.Properties.Temperature.Value.Valid {
+			t := result.Properties.Temperature.Value.Value
+			fmt.Println("Temperature is " + strconv.Itoa(t) + "°C")
+			f := CelsiusToFahrenheit(t)
+			colour.HiGreen("Temperature is " + strconv.Itoa(f) + "°F")
+			fmt.Println("")
+		} else {
+			colour.HiRed("Temperature is currently unavailable, please try again later.")
+			fmt.Println("")
+		}
 	}
 }
 
