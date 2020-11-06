@@ -1,5 +1,7 @@
 package datamodel
 
+import "encoding/json"
+
 // Response is the data model for clWeather
 type Response struct {
 	Context  []interface{} `json:"@context"`
@@ -28,9 +30,9 @@ type Response struct {
 			RawString string      `json:"rawString"`
 		} `json:"presentWeather"`
 		Temperature struct {
-			Value          int    `json:"value"`
-			UnitCode       string `json:"unitCode"`
-			QualityControl string `json:"qualityControl"`
+			Value          JSONInt `json:"value"`
+			UnitCode       string  `json:"unitCode"`
+			QualityControl string  `json:"qualityControl"`
 		} `json:"temperature"`
 		Dewpoint struct {
 			Value          int    `json:"value"`
