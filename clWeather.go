@@ -29,7 +29,6 @@ func makeURL(s string) string {
 
 func requestWeather(stationID string) dataModel.Response {
 	url := makeURL(stationID)
-	fmt.Println(url)
 	weatherResponse, err := http.Get(url)
 
 	if err != nil {
