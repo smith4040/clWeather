@@ -9,6 +9,8 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
+	"time"
 
 	colour "github.com/fatih/color"
 	flag "github.com/ogier/pflag"
@@ -79,21 +81,29 @@ func main() {
 	fmt.Printf("Searching station(s): %s\n", stations)
 	fmt.Println("")
 
-	for _, s := range stations {
-		result := requestWeather(s)
-		colour.HiGreen(result.Properties.RawMessage)
+	wg := sync.WaitGroup{}
 
-		if result.Properties.Temperature.Value.Valid {
-			t := result.Properties.Temperature.Value.Value
-			fmt.Println("Temperature is " + strconv.Itoa(t) + "°C")
-			f := CelsiusToFahrenheit(t)
-			colour.HiGreen("Temperature is " + strconv.Itoa(f) + "°F")
-			fmt.Println("")
-		} else {
-			colour.HiRed("Temperature is currently unavailable, please try again later.")
-			fmt.Println("")
-		}
+	for _, s := range stations {
+		wg.Add(1)
+		go func(s string) {
+			result := requestWeather(s)
+
+			if result.Properties.Temperature.Value.Valid {
+				colour.HiGreen(result.Properties.RawMessage)
+				t := result.Properties.Temperature.Value.Value
+				fmt.Println("Temperature is " + strconv.Itoa(t) + "°C")
+				f := CelsiusToFahrenheit(t)
+				colour.HiGreen("Temperature is " + strconv.Itoa(f) + "°F")
+				fmt.Println("")
+			} else {
+				colour.HiGreen(result.Properties.RawMessage)
+				colour.HiRed("Temperature is currently unavailable, please try again later.")
+				fmt.Println("")
+			}
+			wg.Done()
+		}(s)
 	}
+	wg.Wait()
 }
 
 func printUsage() {
