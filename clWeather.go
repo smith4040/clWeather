@@ -70,6 +70,11 @@ func init() {
 }
 
 func main() {
+	start := time.Now()
+	defer func() {
+		fmt.Println("Execution Time: ", time.Since(start))
+	}()
+
 	flag.Parse()
 
 	// if user does not supply flags, print usage
