@@ -86,9 +86,9 @@ func main() {
 	fmt.Println("")
 
 	wg := sync.WaitGroup{}
+	wg.Add(len(stations))
 
 	for _, s := range stations {
-		wg.Add(1)
 		go func(s string) {
 			result := requestWeather(s)
 
@@ -108,6 +108,7 @@ func main() {
 		}(s)
 	}
 	wg.Wait()
+	fmt.Println("All requests complete.")
 }
 
 func printUsage() {
