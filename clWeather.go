@@ -1,3 +1,6 @@
+// clWeather is a Golang command line tool for querying the weather.gov
+// API for current weather information for a specified station/stations
+
 package main
 
 import (
@@ -86,7 +89,7 @@ func presentResults(stations []string) {
 	fmt.Println("All requests complete.")
 }
 
-// CelsiusToFahrenheit converts celsius to fahrenheit
+// celsiusToFahrenheit converts celsius to fahrenheit
 func celsiusToFahrenheit(c int) int {
 	value := ((c * 9 / 5) + 32)
 	return value
