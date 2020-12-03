@@ -17,6 +17,9 @@ import (
 	dataModel "github.com/smith4040/clWeather/datamodel"
 )
 
+var station string
+
+// makeURL builds the URL for the endpoint to query
 func makeURL(s string) string {
 	const (
 		apiURL          = "https://api.weather.gov/stations/"
@@ -27,6 +30,7 @@ func makeURL(s string) string {
 	return url
 }
 
+// requestWeather makes the GET request to weather service and prepares JSON
 func requestWeather(stationID string) dataModel.Response {
 	url := makeURL(stationID)
 	weatherResponse, err := http.Get(url)
@@ -54,37 +58,14 @@ func requestWeather(stationID string) dataModel.Response {
 	return station
 }
 
-// CelsiusToFahrenheit converts celsius to fahrenheit.
-func CelsiusToFahrenheit(c int) int {
+// CelsiusToFahrenheit converts celsius to fahrenheit
+func celsiusToFahrenheit(c int) int {
 	value := ((c * 9 / 5) + 32)
 	return value
 }
 
-var (
-	station string
-)
-
-func init() {
-	flag.StringVarP(&station, "station", "s", "", "Station ID")
-}
-
-func main() {
-	start := time.Now()
-	defer func() {
-		fmt.Println("Execution Time: ", time.Since(start))
-	}()
-
-	flag.Parse()
-
-	// if user does not supply flags, print usage
-	if flag.NFlag() == 0 {
-		printUsage()
-	}
-
-	stations := strings.Split(station, ",")
-	fmt.Printf("Searching station(s): %s\n", stations)
-	fmt.Println("")
-
+// presentResults is called to display the weather on command line
+func presentResults(stations []string) {
 	wg := sync.WaitGroup{}
 	wg.Add(len(stations))
 
@@ -96,7 +77,7 @@ func main() {
 				colour.HiGreen(result.Properties.RawMessage)
 				t := result.Properties.Temperature.Value.Value
 				fmt.Println("Temperature is " + strconv.Itoa(t) + "°C")
-				f := CelsiusToFahrenheit(t)
+				f := celsiusToFahrenheit(t)
 				colour.HiGreen("Temperature is " + strconv.Itoa(f) + "°F")
 				fmt.Println("")
 			} else {
@@ -111,9 +92,34 @@ func main() {
 	fmt.Println("All requests complete.")
 }
 
+// printUsage displays flags to the user if none are presented
 func printUsage() {
 	fmt.Printf("Usage: %s [options]\n", os.Args[0])
 	fmt.Println("Options:")
 	flag.PrintDefaults()
 	os.Exit(1)
+}
+
+func init() {
+	flag.StringVarP(&station, "station", "s", "", "Station ID")
+}
+
+func main() {
+	start := time.Now()
+
+	flag.Parse()
+	if flag.NFlag() == 0 {
+		printUsage() // if user does not supply flags, print usage
+
+	}
+
+	stations := strings.Split(station, ",")
+	fmt.Printf("Searching station(s): %s\n", stations)
+	fmt.Println("")
+
+	presentResults(stations)
+
+	defer func() {
+		fmt.Println("Execution Time: ", time.Since(start))
+	}()
 }
