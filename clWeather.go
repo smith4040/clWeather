@@ -58,12 +58,6 @@ func requestWeather(stationID string) dataModel.Response {
 	return station
 }
 
-// CelsiusToFahrenheit converts celsius to fahrenheit
-func celsiusToFahrenheit(c int) int {
-	value := ((c * 9 / 5) + 32)
-	return value
-}
-
 // presentResults is called to display the weather on command line
 func presentResults(stations []string) {
 	wg := sync.WaitGroup{}
@@ -90,6 +84,12 @@ func presentResults(stations []string) {
 	}
 	wg.Wait()
 	fmt.Println("All requests complete.")
+}
+
+// CelsiusToFahrenheit converts celsius to fahrenheit
+func celsiusToFahrenheit(c int) int {
+	value := ((c * 9 / 5) + 32)
+	return value
 }
 
 // printUsage displays flags to the user if none are presented
