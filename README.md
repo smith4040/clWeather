@@ -7,7 +7,6 @@ These instructions require your work environment to be setup in accordance with 
 ### Installation
 
 * `go get github.com/smith4040/clWeather`
-* `go build` or `go install` the application
 
 ### Usage
 
