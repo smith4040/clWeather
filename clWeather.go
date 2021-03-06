@@ -36,25 +36,33 @@ func makeURL(s string) string {
 // requestWeather makes the GET request to weather service and prepares JSON
 func requestWeather(stationID string) dataModel.Response {
 	url := makeURL(stationID)
-	weatherResponse, err := http.Get(url)
 
+	weatherResponse, err := http.Get(url)
 	if err != nil {
 		log.Fatalf("Error reading data: %s\n", err)
 	}
 
-	defer weatherResponse.Body.Close()
+	defer func() {
+		err := weatherResponse.Body.Close()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}()
 
 	responseData, err := ioutil.ReadAll(weatherResponse.Body)
-
 	if err != nil {
 		log.Fatalf("Error reading data: %s\n", err)
 	}
 
 	var station dataModel.Response
-	json.Unmarshal(responseData, &station)
+	err = json.Unmarshal(responseData, &station)
+	if err != nil {
+		log.Fatalf("Error unmarshaling JSON: %v", err)
+	}
+
 
 	if weatherResponse.StatusCode >= 400 {
-		colour.Red(stationID + ":" + " Weather observation for this station is currently unavialable. Check spelling and try again later.")
+		colour.Red(stationID + ":" + " Weather observation for this station is currently unavailable. Check spelling and try again later.")
 		log.Print("Response status code: ", weatherResponse.StatusCode)
 		return station
 	}
@@ -91,7 +99,7 @@ func presentResults(stations []string) {
 
 // celsiusToFahrenheit converts celsius to fahrenheit
 func celsiusToFahrenheit(c int) int {
-	value := ((c * 9 / 5) + 32)
+	value := (c * 9 / 5) + 32
 	return value
 }
 
@@ -113,7 +121,6 @@ func main() {
 	flag.Parse()
 	if flag.NFlag() == 0 {
 		printUsage() // if user does not supply flags, print usage
-
 	}
 
 	stations := strings.Split(station, ",")

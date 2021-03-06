@@ -35,7 +35,7 @@ type Response struct {
 			QualityControl string  `json:"qualityControl"`
 		} `json:"temperature"`
 		Dewpoint struct {
-			Value          int    `json:"value"`
+			Value          float64    `json:"value"`
 			UnitCode       string `json:"unitCode"`
 			QualityControl string `json:"qualityControl"`
 		} `json:"dewpoint"`
@@ -95,7 +95,7 @@ type Response struct {
 			QualityControl string      `json:"qualityControl"`
 		} `json:"precipitationLast6Hours"`
 		RelativeHumidity struct {
-			Value          int    `json:"value"`
+			Value          float64    `json:"value"`
 			UnitCode       string `json:"unitCode"`
 			QualityControl string `json:"qualityControl"`
 		} `json:"relativeHumidity"`
