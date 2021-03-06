@@ -10,7 +10,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -81,9 +80,11 @@ func presentResults(stations []string) {
 			if result.Properties.Temperature.Value.Valid {
 				colour.HiGreen(result.Properties.RawMessage)
 				t := result.Properties.Temperature.Value.Value
-				fmt.Println("Temperature is " + strconv.Itoa(t) + "°C")
+				u := fmt.Sprintf("%.2f", t)
+				fmt.Println("Temperature is " + u + "°C")
 				f := celsiusToFahrenheit(t)
-				colour.HiGreen("Temperature is " + strconv.Itoa(f) + "°F")
+				s := fmt.Sprintf("%.2f", f)
+				colour.HiGreen("Temperature is " + s + "°F")
 				fmt.Println("")
 			} else {
 				colour.HiGreen(result.Properties.RawMessage)
@@ -98,7 +99,7 @@ func presentResults(stations []string) {
 }
 
 // celsiusToFahrenheit converts celsius to fahrenheit
-func celsiusToFahrenheit(c int) int {
+func celsiusToFahrenheit(c float64) float64 {
 	value := (c * 9 / 5) + 32
 	return value
 }

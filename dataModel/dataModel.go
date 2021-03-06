@@ -45,7 +45,7 @@ type Response struct {
 			QualityControl string `json:"qualityControl"`
 		} `json:"windDirection"`
 		WindSpeed struct {
-			Value          float64 `json:"value"`
+			Value          int `json:"value"`
 			UnitCode       string  `json:"unitCode"`
 			QualityControl string  `json:"qualityControl"`
 		} `json:"windSpeed"`
@@ -55,7 +55,7 @@ type Response struct {
 			QualityControl string      `json:"qualityControl"`
 		} `json:"windGust"`
 		BarometricPressure struct {
-			Value          int    `json:"value"`
+			Value          float64    `json:"value"`
 			UnitCode       string `json:"unitCode"`
 			QualityControl string `json:"qualityControl"`
 		} `json:"barometricPressure"`
@@ -121,7 +121,7 @@ type Response struct {
 
 // JSONInt is a special struct for handling null vs 0 deg temps
 type JSONInt struct {
-	Value int
+	Value float64
 	Valid bool
 	Set   bool
 }
@@ -138,7 +138,7 @@ func (i *JSONInt) UnmarshalJSON(data []byte) error {
 	}
 
 	// The key isn't set to null
-	var temp int
+	var temp float64
 	if err := json.Unmarshal(data, &temp); err != nil {
 		return err
 	}
