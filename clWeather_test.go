@@ -18,7 +18,7 @@ func TestRequestWeather(t *testing.T) {
 }
 
 func TestCelsiusToFahrenheit(t *testing.T) {
-	got := celsiusToFahrenheit(2.00)
+	got := celsiusToFahrenheit(0.00)
 	want := 32.00
 	t.Logf("Running test case: TestCelsiusToFahrenheit")
 	assert.Equal(t, got, want)
