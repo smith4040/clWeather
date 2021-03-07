@@ -59,7 +59,6 @@ func requestWeather(stationID string) dataModel.Response {
 		log.Fatalf("Error unmarshaling JSON: %v", err)
 	}
 
-
 	if weatherResponse.StatusCode >= 400 {
 		colour.Red(stationID + ":" + " Weather observation for this station is currently unavailable. Check spelling and try again later.")
 		log.Print("Response status code: ", weatherResponse.StatusCode)
