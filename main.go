@@ -16,7 +16,7 @@ import (
 
 	colour "github.com/fatih/color"
 	flag "github.com/ogier/pflag"
-	dataModel "github.com/smith4040/clWeather/datamodel"
+	datamodel "github.com/smith4040/clWeather/datamodel"
 )
 
 var station string
@@ -33,7 +33,7 @@ func makeURL(s string) string {
 }
 
 // requestWeather makes the GET request to weather service and prepares JSON
-func requestWeather(stationID string) dataModel.Response {
+func requestWeather(stationID string) datamodel.Response {
 	url := makeURL(stationID)
 
 	weatherResponse, err := http.Get(url)
@@ -53,7 +53,7 @@ func requestWeather(stationID string) dataModel.Response {
 		log.Fatalf("Error reading data: %s\n", err)
 	}
 
-	var station dataModel.Response
+	var station datamodel.Response
 	err = json.Unmarshal(responseData, &station)
 	if err != nil {
 		log.Fatalf("Error unmarshaling JSON: %v", err)
