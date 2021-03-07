@@ -10,7 +10,6 @@ func TestMakeURL(t *testing.T) {
 	correctURL := "https://api.weather.gov/stations/kfwb/observations/latest"
 	stationID := "kfwb"
 	u := makeURL(stationID)
-	t.Logf("Running test case: TestMakeURL")
 	assert.Equal(t, u, correctURL)
 }
 
