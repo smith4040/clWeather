@@ -5,6 +5,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -21,22 +22,32 @@ import (
 
 // makeURL builds the URL for the endpoint to query
 func makeURL(s string) string {
-	const (
-		apiURL          = "https://api.weather.gov/stations/"
-		observationType = "/observations/latest"
-	)
+	url := fmt.Sprintf("https://api.weather.gov/stations/%s/observations/latest", s)
 
-	url := apiURL + s + observationType
 	return url
 }
 
-// requestWeather makes the GET request to weather service and prepares JSON
-func requestWeather(stationID string) datamodel.Response {
-	url := makeURL(stationID)
+// celsiusToFahrenheit converts celsius to fahrenheit
+func celsiusToFahrenheit(c float64) float64 {
+	value := (c * 9 / 5) + 32
+	return value
+}
 
+// processData prepares JSON
+func processData(d []byte) datamodel.Response {
+	var station datamodel.Response
+	err := json.Unmarshal(d, &station)
+	if err != nil {
+		log.Fatalf("Error unmarshaling JSON: %v", err)
+	}
+	return station
+}
+
+func requestObservation(stationID string) (datamodel.Response, error) {
+	url := makeURL(stationID)
 	weatherResponse, err := http.Get(url)
 	if err != nil {
-		log.Fatalf("Error reading data: %s\n", err)
+		log.Fatal(err)
 	}
 
 	defer func() {
@@ -51,18 +62,13 @@ func requestWeather(stationID string) datamodel.Response {
 		log.Fatalf("Error reading data: %s\n", err)
 	}
 
-	var station datamodel.Response
-	err = json.Unmarshal(responseData, &station)
-	if err != nil {
-		log.Fatalf("Error unmarshaling JSON: %v", err)
+	p := processData(responseData)
+	sc := weatherResponse.StatusCode
+	if sc >= 400 {
+		colour.Red(stationID + ":" + " Weather observation for this station is currently unavailable. Check spelling or try again later.")
+		return p, errors.New("Server error, status code " + fmt.Sprint(sc))
 	}
-
-	if weatherResponse.StatusCode >= 400 {
-		colour.Red(stationID + ":" + " Weather observation for this station is currently unavailable. Check spelling and try again later.")
-		log.Print("Response status code: ", weatherResponse.StatusCode)
-		return station
-	}
-	return station
+	return p, nil
 }
 
 // presentResults is called to display the weather on command line
@@ -72,7 +78,10 @@ func presentResults(stations []string) {
 
 	for _, s := range stations {
 		go func(s string) {
-			result := requestWeather(s)
+			result, err := requestObservation(s)
+			if err != nil {
+				log.Fatal(err)
+			}
 
 			if result.Properties.Temperature.Value.Valid {
 				colour.HiGreen(result.Properties.RawMessage)
@@ -93,12 +102,6 @@ func presentResults(stations []string) {
 	}
 	wg.Wait()
 	fmt.Println("All requests complete.")
-}
-
-// celsiusToFahrenheit converts celsius to fahrenheit
-func celsiusToFahrenheit(c float64) float64 {
-	value := (c * 9 / 5) + 32
-	return value
 }
 
 // printUsage displays flags to the user if none are presented

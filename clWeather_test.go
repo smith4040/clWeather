@@ -15,7 +15,8 @@ func TestMakeURL(t *testing.T) {
 	}
 }
 
-func TestRequestWX(t *testing.T) {
+func TestRequestObservation(t *testing.T) {
+	// place holder demo code for testing requestWX
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		if r.Method != "GET" {
