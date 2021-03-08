@@ -1,25 +1,52 @@
 package main
 
 import (
+	"net/http"
+	"net/http/httptest"
 	"testing"
-
-	"github.com/stretchr/testify/assert"
 )
 
 func TestMakeURL(t *testing.T) {
 	correctURL := "https://api.weather.gov/stations/kfwb/observations/latest"
 	stationID := "kfwb"
 	u := makeURL(stationID)
-	assert.Equal(t, u, correctURL)
+	if correctURL != u {
+		t.Errorf("got %v want %v", u, correctURL)
+	}
 }
 
-func TestRequestWeather(t *testing.T) {
+func TestRequestWX(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		if r.Method != "GET" {
+			t.Errorf("Expected ‘POST’ request, got ‘%s’", r.Method)
+		}
 
+		r.ParseForm()
+		topic := r.Form.Get("topic")
+		if topic != "meaningful-topic" {
+			t.Errorf("Expected request to have ‘topic=meaningful-topic’, got: ‘%s’", topic)
+		}
+	}))
+	defer ts.Close()
 }
 
 func TestCelsiusToFahrenheit(t *testing.T) {
 	got := celsiusToFahrenheit(0.00)
 	want := 32.00
-	t.Logf("Running test case: TestCelsiusToFahrenheit")
-	assert.Equal(t, got, want)
+	if got != want {
+		t.Errorf("got %v want %v", got, want)
+	}
+
+	g := celsiusToFahrenheit(15.00)
+	w := 59.00
+	if got != want {
+		t.Errorf("got %v want %v", g, w)
+	}
+
+	gg := celsiusToFahrenheit(-10.00)
+	ww := 14.00
+	if got != want {
+		t.Errorf("got %v want %v", gg, ww)
+	}
 }
