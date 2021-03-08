@@ -5,6 +5,7 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -15,11 +16,8 @@ import (
 	"time"
 
 	colour "github.com/fatih/color"
-	flag "github.com/ogier/pflag"
 	datamodel "github.com/smith4040/clWeather/datamodel"
 )
-
-var station string
 
 // makeURL builds the URL for the endpoint to query
 func makeURL(s string) string {
@@ -111,13 +109,11 @@ func printUsage() {
 	os.Exit(1)
 }
 
-func init() {
-	flag.StringVarP(&station, "station", "s", "", "Station ID")
-}
-
 func main() {
 	start := time.Now()
+	var station string
 
+	flag.StringVar(&station, "s", "", "Station ID")
 	flag.Parse()
 	if flag.NFlag() == 0 {
 		printUsage() // if user does not supply flags, print usage
