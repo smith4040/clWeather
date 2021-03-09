@@ -49,6 +49,11 @@ func requestObservation(stationID string) (datamodel.Response, error) {
 		log.Fatal(err)
 	}
 
+	responseData, err := ioutil.ReadAll(weatherResponse.Body)
+	if err != nil {
+		log.Fatalf("Error reading data: %s\n", err)
+	}
+
 	defer func() {
 		err := weatherResponse.Body.Close()
 		if err != nil {
@@ -56,16 +61,11 @@ func requestObservation(stationID string) (datamodel.Response, error) {
 		}
 	}()
 
-	responseData, err := ioutil.ReadAll(weatherResponse.Body)
-	if err != nil {
-		log.Fatalf("Error reading data: %s\n", err)
-	}
-
 	p := processData(responseData)
 	sc := weatherResponse.StatusCode
 	if sc >= 400 {
-		colour.Red(stationID + ":" + " Weather observation for this station is currently unavailable. Check spelling or try again later.")
-		return p, errors.New("Server error, status code " + fmt.Sprint(sc))
+		fmt.Println(warn(stationID + ":" + " Weather observation for this station is currently unavailable. Check spelling or try again later."))
+		return p, errors.New(fata("Server error, status code " + fmt.Sprint(sc)))
 	}
 	return p, nil
 }
@@ -83,17 +83,14 @@ func presentResults(stations []string) {
 			}
 
 			if result.Properties.Temperature.Value.Valid {
-				colour.HiGreen(result.Properties.RawMessage)
+				fmt.Println(green(result.Properties.RawMessage))
 				t := result.Properties.Temperature.Value.Value
-				u := fmt.Sprintf("%.2f", t)
-				fmt.Println("Temperature is " + u + "°C")
 				f := celsiusToFahrenheit(t)
 				s := fmt.Sprintf("%.2f", f)
-				colour.HiGreen("Temperature is " + s + "°F")
-				fmt.Println("")
+				fmt.Println(teal("Temperature is " + s + "°F\n"))
 			} else {
-				colour.HiGreen(result.Properties.RawMessage)
-				colour.HiRed("Temperature is currently unavailable, please try again later.")
+				fmt.Println(green(result.Properties.RawMessage))
+				fmt.Println(warn("Temperature is currently unavailable, please try again later."))
 				fmt.Println("")
 			}
 			wg.Done()
@@ -122,9 +119,7 @@ func main() {
 	}
 
 	stations := strings.Split(station, ",")
-	fmt.Printf("Searching station(s): %s\n", stations)
-	fmt.Println("")
-
+	fmt.Printf("Searching station(s): %s\n\n", stations)
 	presentResults(stations)
 
 	defer func() {
