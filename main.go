@@ -16,7 +16,6 @@ import (
 	"sync"
 	"time"
 
-	colour "github.com/fatih/color"
 	datamodel "github.com/smith4040/clWeather/datamodel"
 )
 
