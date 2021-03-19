@@ -1,6 +1,9 @@
 // clWeather is a Golang command line tool for querying the weather.gov
 // API for current weather information for a specified station/stations
 
+// TODO- handle error better when station isnt available, printing a blank line to terminal
+// TODO- use remaining colors or delete
+
 package main
 
 import (
@@ -96,8 +99,7 @@ func presentResults(stations []string) {
 			fmt.Println(teal("Temperature is " + s + "°F\n"))
 		} else {
 			fmt.Println(green(p.Properties.RawMessage))
-			fmt.Println(warn("Temperature is currently unavailable, please try again later."))
-			fmt.Println("")
+			fmt.Println(warn("Temperature is currently unavailable, please try again later.\n"))
 		}
 	}
 	fmt.Println("All requests complete.")
