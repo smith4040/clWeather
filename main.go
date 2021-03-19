@@ -5,7 +5,6 @@ package main
 
 import (
 	"encoding/json"
-	"errors"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -42,7 +41,8 @@ func processData(d []byte) datamodel.Response {
 	return station
 }
 
-func requestObservation(stationID string) (datamodel.Response, error) {
+func requestObservation(stationID string, ch chan<- string, wg *sync.WaitGroup) {
+	defer wg.Done()
 	url := makeURL(stationID)
 	weatherResponse, err := http.Get(url)
 	if err != nil {
@@ -54,49 +54,52 @@ func requestObservation(stationID string) (datamodel.Response, error) {
 		log.Fatalf("Error reading data: %s\n", err)
 	}
 
+	sc := weatherResponse.StatusCode
+	if sc >= 400 {
+		fmt.Println(warn(stationID, ": Weather observation for this station is currently unavailable. Check spelling or try again later."))
+		fmt.Println(fata("Server error, status code " + fmt.Sprint(sc)))
+	}
+
 	defer func() {
 		err := weatherResponse.Body.Close()
 		if err != nil {
 			log.Fatal(err)
 		}
 	}()
-
-	p := processData(responseData)
-	sc := weatherResponse.StatusCode
-	if sc >= 400 {
-		fmt.Println(warn(stationID, ": Weather observation for this station is currently unavailable. Check spelling or try again later."))
-		return p, errors.New(fata("Server error, status code " + fmt.Sprint(sc)))
-	}
-	return p, nil
+	ch <- string(responseData)
 }
 
 // presentResults is called to display the weather on command line
 func presentResults(stations []string) {
+	ch := make(chan string)
 	wg := sync.WaitGroup{}
-	wg.Add(len(stations))
+	//wg.Add(len(stations))
 
 	for _, s := range stations {
-		go func(s string) {
-			result, err := requestObservation(s)
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			if result.Properties.Temperature.Value.Valid {
-				fmt.Println(green(result.Properties.RawMessage))
-				t := result.Properties.Temperature.Value.Value
-				f := celsiusToFahrenheit(t)
-				s := fmt.Sprintf("%.2f", f)
-				fmt.Println(teal("Temperature is " + s + "°F\n"))
-			} else {
-				fmt.Println(green(result.Properties.RawMessage))
-				fmt.Println(warn("Temperature is currently unavailable, please try again later."))
-				fmt.Println("")
-			}
-			wg.Done()
-		}(s)
+		wg.Add(1)
+		go requestObservation(s, ch, &wg)
 	}
-	wg.Wait()
+	// close the channel in the background
+	go func() {
+		wg.Wait()
+		close(ch)
+	}()
+
+	for result := range ch {
+		p := processData([]byte(result))
+
+		if p.Properties.Temperature.Value.Valid {
+			fmt.Println(green(p.Properties.RawMessage))
+			t := p.Properties.Temperature.Value.Value
+			f := celsiusToFahrenheit(t)
+			s := fmt.Sprintf("%.2f", f)
+			fmt.Println(teal("Temperature is " + s + "°F\n"))
+		} else {
+			fmt.Println(green(p.Properties.RawMessage))
+			fmt.Println(warn("Temperature is currently unavailable, please try again later."))
+			fmt.Println("")
+		}
+	}
 	fmt.Println("All requests complete.")
 }
 
