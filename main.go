@@ -64,7 +64,7 @@ func requestObservation(stationID string) (datamodel.Response, error) {
 	p := processData(responseData)
 	sc := weatherResponse.StatusCode
 	if sc >= 400 {
-		fmt.Println(warn(stationID + ":" + " Weather observation for this station is currently unavailable. Check spelling or try again later."))
+		fmt.Println(warn(stationID, ": Weather observation for this station is currently unavailable. Check spelling or try again later."))
 		return p, errors.New(fata("Server error, status code " + fmt.Sprint(sc)))
 	}
 	return p, nil
