@@ -21,7 +21,7 @@ import (
 
 // makeURL builds the URL for the endpoint to query
 func makeURL(s string) string {
-	url := fmt.Sprintf("https://api.weather.gov/stations/%s/observations/latest", s)
+	url := "https://api.weather.gov/stations/" + s + "/observations/latest"
 
 	return url
 }
@@ -86,8 +86,8 @@ func presentResults(stations []string) {
 				fmt.Println(green(result.Properties.RawMessage))
 				t := result.Properties.Temperature.Value.Value
 				f := celsiusToFahrenheit(t)
-				s := fmt.Sprintf("%.2f", f)
-				fmt.Println(teal("Temperature is " + s + "°F\n"))
+				sp := fmt.Sprintf("%.2f", f)
+				fmt.Println(teal(strings.ToUpper(s), " temperature is "+sp+"°F\n"))
 			} else {
 				fmt.Println(green(result.Properties.RawMessage))
 				fmt.Println(warn("Temperature is currently unavailable, please try again later."))
