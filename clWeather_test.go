@@ -3,7 +3,10 @@ package main
 import (
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"testing"
+
+	datamodel "github.com/smith4040/clWeather/datamodel"
 )
 
 func TestMakeURL(t *testing.T) {
@@ -49,5 +52,19 @@ func TestCelsiusToFahrenheit(t *testing.T) {
 	ww := 14.00
 	if got != want {
 		t.Errorf("got %v want %v", gg, ww)
+	}
+}
+
+func TestProcessData(t *testing.T) {
+	goodInput := "str"
+	var expectedOutput datamodel.Response
+
+	pd, err := processData([]byte(goodInput))
+	if err != nil {
+		t.Error("Failure message: ", err)
+	}
+
+	if !reflect.DeepEqual(expectedOutput, pd) {
+		t.Fatal("Actual output doesn't match expected")
 	}
 }
