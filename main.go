@@ -76,12 +76,12 @@ func requestObservation(stationID string, ch chan<- string, wg *sync.WaitGroup) 
 func presentResults(stations []string) {
 	ch := make(chan string)
 	wg := sync.WaitGroup{}
-	//wg.Add(len(stations))
+	wg.Add(len(stations))
 
 	for _, s := range stations {
-		wg.Add(1)
 		go requestObservation(s, ch, &wg)
 	}
+
 	// close the channel in the background
 	go func() {
 		wg.Wait()
@@ -89,7 +89,11 @@ func presentResults(stations []string) {
 	}()
 
 	for result := range ch {
-		p := processData([]byte(result))
+		p, err := processData([]byte(result))
+		if err != nil {
+			log.Println("error processing data")
+			return
+		}
 
 		if p.Properties.Temperature.Value.Valid {
 			fmt.Println(green(p.Properties.RawMessage))
