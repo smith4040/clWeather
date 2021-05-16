@@ -35,13 +35,13 @@ func celsiusToFahrenheit(c float64) float64 {
 }
 
 // processData prepares JSON
-func processData(d []byte) datamodel.Response {
+func processData(d []byte) (datamodel.Response, error) {
 	var station datamodel.Response
 	err := json.Unmarshal(d, &station)
 	if err != nil {
-		log.Fatalf("Error unmarshaling JSON: %v", err)
+		return station, err
 	}
-	return station
+	return station, nil
 }
 
 func requestObservation(stationID string, ch chan<- string, wg *sync.WaitGroup) {
