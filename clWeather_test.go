@@ -44,13 +44,13 @@ func TestCelsiusToFahrenheit(t *testing.T) {
 
 	g := celsiusToFahrenheit(15.00)
 	w := 59.00
-	if got != want {
+	if g != w {
 		t.Errorf("got %v want %v", g, w)
 	}
 
 	gg := celsiusToFahrenheit(-10.00)
 	ww := 14.00
-	if got != want {
+	if gg != ww {
 		t.Errorf("got %v want %v", gg, ww)
 	}
 }
