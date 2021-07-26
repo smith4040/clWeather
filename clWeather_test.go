@@ -5,8 +5,6 @@ import (
 	"net/http/httptest"
 	"reflect"
 	"testing"
-
-	datamodel "github.com/smith4040/clWeather/datamodel"
 )
 
 func TestMakeURL(t *testing.T) {
@@ -56,15 +54,14 @@ func TestCelsiusToFahrenheit(t *testing.T) {
 }
 
 func TestProcessData(t *testing.T) {
-	goodInput := "str"
-	var expectedOutput datamodel.Response
-
-	pd, err := processData([]byte(goodInput))
+	input := `{"properties":{"station":"ksgf"}}`
+	got, err := processData([]byte(input))
 	if err != nil {
 		t.Error("Failure message: ", err)
 	}
+	want := "ksgf"
 
-	if !reflect.DeepEqual(expectedOutput, pd) {
+	if !reflect.DeepEqual(want, got.Properties.Station) {
 		t.Fatal("Actual output doesn't match expected")
 	}
 }
