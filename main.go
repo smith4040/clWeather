@@ -23,7 +23,7 @@ import (
 
 // makeURL builds the URL for the endpoint to query
 func makeURL(s string) string {
-	url := fmt.Sprintf("https://api.weather.gov/stations/%s/observations/latest", s)
+	url := "https://api.weather.gov/stations/" + s + "/observations/latest"
 
 	return url
 }

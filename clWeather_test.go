@@ -21,7 +21,7 @@ func TestRequestObservation(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		if r.Method != "GET" {
-			t.Errorf("Expected ‘POST’ request, got ‘%s’", r.Method)
+			t.Errorf("Expected ‘GET’ request, got ‘%s’", r.Method)
 		}
 
 		r.ParseForm()
