@@ -23,7 +23,7 @@ import (
 
 // makeURL builds the URL for the endpoint to query
 func makeURL(s string) string {
-	url := "https://api.weather.gov/stations/" + s + "/observations/latest"
+	url := "https://api.weather.gov/stations/" + s + "/observations/latest?require_qc=true"
 
 	return url
 }
