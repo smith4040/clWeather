@@ -61,6 +61,7 @@ func requestObservation(stationID string, ch chan<- string, wg *sync.WaitGroup) 
 	if sc >= 400 {
 		fmt.Println(warn(stationID, ": Weather observation for this station is currently unavailable. Check spelling or try again later."))
 		fmt.Println(fata("Server error, status code " + fmt.Sprint(sc)))
+		return
 	}
 
 	defer func() {
@@ -91,18 +92,18 @@ func presentResults(stations []string) {
 	for result := range ch {
 		p, err := processData([]byte(result))
 		if err != nil {
-			log.Println("error processing data")
+			log.Printf("error processing data: %s\n", err)
 			return
 		}
 
+		fmt.Println(green(p.Properties.RawMessage))
+
 		if p.Properties.Temperature.Value.Valid {
-			fmt.Println(green(p.Properties.RawMessage))
 			t := p.Properties.Temperature.Value.Value
 			f := celsiusToFahrenheit(t)
 			s := fmt.Sprintf("%.2f", f)
 			fmt.Println(teal("Temperature is " + s + "°F\n"))
 		} else {
-			fmt.Println(green(p.Properties.RawMessage))
 			fmt.Println(warn("Temperature is currently unavailable, please try again later.\n"))
 		}
 	}
