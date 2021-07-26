@@ -8,7 +8,7 @@ import (
 )
 
 func TestMakeURL(t *testing.T) {
-	correctURL := "https://api.weather.gov/stations/kfwb/observations/latest"
+	correctURL := "https://api.weather.gov/stations/kfwb/observations/latest?require_qc=true"
 	stationID := "kfwb"
 	u := makeURL(stationID)
 	if correctURL != u {
