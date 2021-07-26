@@ -3,6 +3,7 @@ package main
 import (
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"testing"
 )
 
@@ -41,13 +42,26 @@ func TestCelsiusToFahrenheit(t *testing.T) {
 
 	g := celsiusToFahrenheit(15.00)
 	w := 59.00
-	if got != want {
+	if g != w {
 		t.Errorf("got %v want %v", g, w)
 	}
 
 	gg := celsiusToFahrenheit(-10.00)
 	ww := 14.00
-	if got != want {
+	if gg != ww {
 		t.Errorf("got %v want %v", gg, ww)
+	}
+}
+
+func TestProcessData(t *testing.T) {
+	input := `{"properties":{"station":"ksgf"}}`
+	got, err := processData([]byte(input))
+	if err != nil {
+		t.Error("Failure message: ", err)
+	}
+	want := "ksgf"
+
+	if !reflect.DeepEqual(want, got.Properties.Station) {
+		t.Fatal("Actual output doesn't match expected")
 	}
 }
