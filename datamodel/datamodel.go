@@ -15,8 +15,8 @@ type Response struct {
 		ID        string `json:"@id"`
 		Type      string `json:"@type"`
 		Elevation struct {
-			Value    int    `json:"value"`
-			UnitCode string `json:"unitCode"`
+			Value    float64 `json:"value"`
+			UnitCode string  `json:"unitCode"`
 		} `json:"elevation"`
 		Station         string `json:"station"`
 		Timestamp       string `json:"timestamp"`
@@ -111,8 +111,8 @@ type Response struct {
 		} `json:"heatIndex"`
 		CloudLayers []struct {
 			Base struct {
-				Value    int    `json:"value"`
-				UnitCode string `json:"unitCode"`
+				Value    float64 `json:"value"`
+				UnitCode string  `json:"unitCode"`
 			} `json:"base"`
 			Amount string `json:"amount"`
 		} `json:"cloudLayers"`
