@@ -19,6 +19,7 @@ type Response struct {
 			UnitCode string  `json:"unitCode"`
 		} `json:"elevation"`
 		Station         string `json:"station"`
+		StationName     string `json:"stationName"`
 		Timestamp       string `json:"timestamp"`
 		RawMessage      string `json:"rawMessage"`
 		TextDescription string `json:"textDescription"`
