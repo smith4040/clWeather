@@ -10,7 +10,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -52,7 +52,7 @@ func requestObservation(stationID string, ch chan<- string, wg *sync.WaitGroup) 
 		log.Fatal(err)
 	}
 
-	responseData, err := ioutil.ReadAll(weatherResponse.Body)
+	responseData, err := io.ReadAll(weatherResponse.Body)
 	if err != nil {
 		log.Fatalf("Error reading data: %s\n", err)
 	}
