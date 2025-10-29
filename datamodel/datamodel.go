@@ -40,9 +40,9 @@ type Response struct {
 			QualityControl string  `json:"qualityControl"`
 		} `json:"dewpoint"`
 		WindDirection struct {
-			Value          int    `json:"value"`
-			UnitCode       string `json:"unitCode"`
-			QualityControl string `json:"qualityControl"`
+			Value          float64 `json:"value"`
+			UnitCode       string  `json:"unitCode"`
+			QualityControl string  `json:"qualityControl"`
 		} `json:"windDirection"`
 		WindSpeed struct {
 			Value          float64 `json:"value"`
