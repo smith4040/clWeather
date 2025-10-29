@@ -73,6 +73,15 @@ func requestObservation(stationID string, ch chan<- string, wg *sync.WaitGroup) 
 	ch <- string(responseData)
 }
 
+func checkRawMessage(s string) {
+	if s == "" {
+		fmt.Println(red("Raw METAR not curently available"))
+		return
+	}
+	fmt.Println(green(s))
+
+}
+
 // presentResults is called to display the weather on command line
 func presentResults(stations []string) {
 	ch := make(chan string)
@@ -96,7 +105,8 @@ func presentResults(stations []string) {
 			return
 		}
 
-		fmt.Println(green(p.Properties.RawMessage))
+		fmt.Println(green(p.Properties.StationName))
+		checkRawMessage(p.Properties.RawMessage)
 
 		if p.Properties.Temperature.Value.Valid {
 			t := p.Properties.Temperature.Value.Value
