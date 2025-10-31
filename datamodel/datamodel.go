@@ -1,6 +1,9 @@
 package datamodel
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"time"
+)
 
 // Response is the data model for clWeather
 type Response struct {
@@ -120,6 +123,34 @@ type Response struct {
 	} `json:"properties"`
 }
 
+type AvWxResponse []struct {
+	IcaoID      string      `json:"icaoId"`
+	ReceiptTime time.Time   `json:"receiptTime"`
+	ObsTime     float64     `json:"obsTime"`
+	ReportTime  time.Time   `json:"reportTime"`
+	Temp        *float64    `json:"temp"`
+	Dewp        float64     `json:"dewp"`
+	Wdir        interface{} `json:"wdir"`
+	Wspd        float64     `json:"wspd"`
+	Visib       interface{} `json:"visib"`
+	Altim       float64     `json:"altim"`
+	Slp         float64     `json:"slp"`
+	QcField     float64     `json:"qcField"`
+	MetarType   string      `json:"metarType"`
+	RawOb       string      `json:"rawOb"`
+	Lat         float64     `json:"lat"`
+	Lon         float64     `json:"lon"`
+	Elev        float64     `json:"elev"`
+	Name        string      `json:"name"`
+	Cover       string      `json:"cover"`
+	Clouds      []struct {
+		Cover string  `json:"cover"`
+		Base  float64 `json:"base"`
+	} `json:"clouds"`
+	FltCat string `json:"fltCat"`
+	RawTaf string `json:"rawTaf"`
+}
+
 // JSONInt is a special struct for handling null vs 0 deg temps
 type JSONInt struct {
 	Value float64
@@ -146,4 +177,9 @@ func (i *JSONInt) UnmarshalJSON(data []byte) error {
 	i.Value = temp
 	i.Valid = true
 	return nil
+}
+
+type ErrorResponse struct {
+	Status string `json:"status"`
+	Error  string `json:"error"`
 }

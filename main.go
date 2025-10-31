@@ -1,19 +1,19 @@
-// clWeather is a Golang command line tool for querying the weather.gov
+// clWeather is a Golang command line tool for querying the aviationweather.gov
 // API for current weather information for a specified station/stations
-
-// TODO- handle error better when station isnt available, printing a blank line to terminal
-// TODO- use remaining colors or delete
 
 package main
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
+	"net/http/cookiejar"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -22,8 +22,8 @@ import (
 )
 
 // makeURL builds the URL for the endpoint to query
-func makeURL(s string) string {
-	url := "https://api.weather.gov/stations/" + s + "/observations/latest?require_qc=true"
+func makeURL(s string, t string) string {
+	url := "https://aviationweather.gov/api/data/metar?ids=" + s + "&format=json&taf=" + t + "&hours=1.5"
 
 	return url
 }
@@ -35,8 +35,8 @@ func celsiusToFahrenheit(c float64) float64 {
 }
 
 // processData prepares JSON
-func processData(d []byte) (datamodel.Response, error) {
-	var station datamodel.Response
+func processData(d []byte) (datamodel.AvWxResponse, error) {
+	var station datamodel.AvWxResponse
 	err := json.Unmarshal(d, &station)
 	if err != nil {
 		return station, err
@@ -44,52 +44,81 @@ func processData(d []byte) (datamodel.Response, error) {
 	return station, nil
 }
 
-func requestObservation(stationID string, ch chan<- string, wg *sync.WaitGroup) {
+func requestObservation(stationID string, taf string, ch chan<- string, wg *sync.WaitGroup) {
 	defer wg.Done()
-	url := makeURL(stationID)
-	weatherResponse, err := http.Get(url)
+	url := makeURL(stationID, taf)
+
+	jar, err := cookiejar.New(nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Error setting up cookie jar: %v", err)
 	}
 
-	responseData, err := io.ReadAll(weatherResponse.Body)
+	client := &http.Client{
+		Jar: jar,
+		Transport: &http.Transport{
+			TLSNextProto: make(map[string]func(authority string, c *tls.Conn) http.RoundTripper), // Disable HTTP/2
+		},
+	}
+
+	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
-		log.Fatalf("Error reading data: %s\n", err)
+		log.Fatalf("Error creating request: %v", err)
 	}
 
-	sc := weatherResponse.StatusCode
-	if sc >= 400 {
-		fmt.Println(warn(stationID, ": Weather observation for this station is currently unavailable. Check spelling or try again later."))
-		fmt.Println(fata("Server error, status code " + fmt.Sprint(sc)))
-		return
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.127 Safari/537.36")
+	req.Header.Add("Accept", "application/json")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Fatalf("Error making request: %v", err)
 	}
 
-	defer func() {
-		err := weatherResponse.Body.Close()
+	if resp.StatusCode == http.StatusBadRequest {
+		// Read the response body
+		body, err := io.ReadAll(resp.Body)
 		if err != nil {
-			log.Fatal(err)
+			fmt.Printf("Error reading 400 response body: %v\n", err)
+			return
 		}
-	}()
-	ch <- string(responseData)
-}
 
-func checkRawMessage(s string) {
-	if s == "" {
-		fmt.Println(red("Raw METAR not curently available"))
-		return
+		// Attempt to unmarshal the JSON error response
+		var errorResponse datamodel.ErrorResponse
+		if err := json.Unmarshal(body, &errorResponse); err != nil {
+			fmt.Printf("Error unmarshaling 400 error JSON: %v\n", err)
+			fmt.Printf("Raw 400 response body: %s\n", body) // Log raw body if unmarshaling fails
+			return
+		}
+
+		fmt.Printf("Received 400 Bad Request error:\n")
+		fmt.Printf("  Status: %s\n", errorResponse.Status)
+		fmt.Printf("  Error: %s\n", errorResponse.Error)
+	} else if resp.StatusCode != http.StatusOK {
+		// Handle other non-200 status codes as needed
+		fmt.Printf("Received unexpected status code: %d\n", resp.StatusCode)
+	} else {
+		responseData, err := io.ReadAll(resp.Body)
+		if err != nil {
+			log.Fatalf("Error reading data: %s\n", err)
+		}
+
+		defer func() {
+			err := resp.Body.Close()
+			if err != nil {
+				log.Fatal(err)
+			}
+		}()
+		ch <- string(responseData)
 	}
-	fmt.Println(green(s))
-
 }
 
 // presentResults is called to display the weather on command line
-func presentResults(stations []string) {
+func presentResults(stations []string, taf string) {
 	ch := make(chan string)
 	wg := sync.WaitGroup{}
 	wg.Add(len(stations))
 
 	for _, s := range stations {
-		go requestObservation(s, ch, &wg)
+		go requestObservation(s, taf, ch, &wg)
 	}
 
 	// close the channel in the background
@@ -105,18 +134,52 @@ func presentResults(stations []string) {
 			return
 		}
 
-		fmt.Println(green(p.Properties.StationName))
-		checkRawMessage(p.Properties.RawMessage)
+		name := p[0].Name
+		if name != "" {
+			fmt.Println(name)
+		}
 
-		if p.Properties.Temperature.Value.Valid {
-			t := p.Properties.Temperature.Value.Value
-			f := celsiusToFahrenheit(t)
+		metar := p[0].RawOb
+		fCat := p[0].FltCat
+		if metar != "" {
+			switch {
+			case fCat == "VFR":
+				fmt.Println(green(metar))
+			case fCat == "MVFR":
+				fmt.Println(blue(metar))
+			case fCat == "IFR":
+				fmt.Println(red(metar))
+			case fCat == "LIFR":
+				fmt.Println(magenta(metar))
+			default:
+				fmt.Println(metar)
+			}
+
+		}
+
+		if taf == "true" {
+			rt := p[0].RawTaf
+			if rt != "" {
+				fmt.Println(rt)
+			}
+		}
+
+		if p[0].Temp != nil {
+			t := p[0].Temp
+			f := celsiusToFahrenheit(*t)
 			s := fmt.Sprintf("%.2f", f)
-			fmt.Println(teal("Temperature is " + s + "°F\n"))
+			fmt.Println(teal("Temperature is " + s + "°F"))
 		} else {
-			fmt.Println(warn("Temperature is currently unavailable, please try again later.\n"))
+			fmt.Println(yellow("Temperature is currently unavailable, please try again later."))
+		}
+
+		if p[0].Wdir != nil {
+			fmt.Println(teal("Wind is from ", p[0].Wdir, "\u00B0 at ", p[0].Wspd, "kts\n"))
+		} else {
+			println("\n")
 		}
 	}
+	// this isnt true, fix
 	fmt.Println("All requests complete.")
 }
 
@@ -133,14 +196,17 @@ func main() {
 	var station string
 
 	flag.StringVar(&station, "s", "", "Station ID")
+	taf := flag.Bool("t", false, "Show Terminal Area Forecast")
 	flag.Parse()
 	if flag.NFlag() == 0 {
 		printUsage() // if user does not supply flags, print usage
 	}
 
+	str := strconv.FormatBool(*taf)
+
 	stations := strings.Split(station, ",")
 	fmt.Printf("Searching station(s): %s\n\n", stations)
-	presentResults(stations)
+	presentResults(stations, str)
 
 	defer func() {
 		fmt.Println("Execution Time: ", time.Since(start))
