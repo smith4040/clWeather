@@ -89,12 +89,12 @@ func requestObservation(stationID string, taf string, ch chan<- string, wg *sync
 			return
 		}
 
-		fmt.Printf("Received 400 Bad Request error:\n")
+		fmt.Printf("Request for station %s received 400 Bad Request error:\n", stationID)
 		fmt.Printf("  Status: %s\n", errorResponse.Status)
-		fmt.Printf("  Error: %s\n", errorResponse.Error)
+		fmt.Printf("  Error: %s\n\n", errorResponse.Error)
 	} else if resp.StatusCode != http.StatusOK {
 		// Handle other non-200 status codes as needed
-		fmt.Printf("Received unexpected status code: %d\n", resp.StatusCode)
+		fmt.Println(red("Request for station ", stationID, " received unexpected status code: ", resp.StatusCode, "\n"))
 	} else {
 		responseData, err := io.ReadAll(resp.Body)
 		if err != nil {
