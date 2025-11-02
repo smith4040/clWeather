@@ -1,28 +1,18 @@
-# clWeather
-clWeather is a command line application that queries the National Weather Service API (https://api.weather.gov) and receives the latest weather observation for the requested station(s).  
+# clWeather — Aviation METAR/TAF CLI
 
-## How to Use the Application 
-These instructions require your work environment to be setup in accordance with https://golang.org/doc/install
+[![CI](https://github.com/smith4040/clWeather/actions/workflows/ci.yml/badge.svg)](https://github.com/smith4040/clWeather/actions)
+[![Go Report Card](https://goreportcard.com/badge/github.com/smith4040/clWeather)](https://goreportcard.com/report/github.com/smith4040/clWeather)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-### Installation
+A fast CLI for aviation weather: METAR (observations) and TAF (forecasts) from [aviationweather.gov API](https://aviationweather.gov/data/api/).
 
-* `go get -u github.com/smith4040/clWeather`
+## Features
+- METAR: Current conditions, flight category (VFR/IFR/MVFR/LIFR), wind, vis, clouds
+- TAF: 24-30hr forecasts with TEMPO changes
+- Formats: Human-readable, raw text, JSON
+- No API key; rate-limited to 100/min
 
-### Usage
+## Installation
 
-* Run the command `clWeather -s {four letter station identifier}` 
-
-For example: `clWeather -s kord` returns the latest weather observation from Chicago O'Hare International Airport.
-
-Multiple stations can be queried by adding additional stations separated by commas, i.e.: `clWeather -s kord,kjfk,kbos`
-
-## How to Find the Identity of a Station
-* Go to https://www.faa.gov/air_traffic/weather/asos/
-* Select your state and click "Go"
-* Click on one of the pins closest to the location where you want to check the weather
-* The four-letter station identifier will be in the top left corner of the view that opens.
-
-The current output of the response is in METAR format. See https://www.weather.gov/media/wrh/mesowest/metar_decode_key.pdf for help to understand the response. The current plan is to modify the output to be more readable/decoded and add a flag for getting the raw response. 
-
-##
-This repository is a work in progress. New features will be added soon, and a more complete test suite is in progress. 
+```bash
+go install github.com/smith4040/clWeather/cmd/clweather@latest
