@@ -58,23 +58,23 @@ func printHumanMETAR(r aviation.Response) {
 	fmt.Printf("💨   Wind: %s%s %s (gust %s)\n", r.WindDir, r.WindSpeed, r.WindDir, r.WindGust)
 	fmt.Printf("👁️   Vis: %s | Alt: %s\n", r.Visibility, r.Barometer)
 	fmt.Printf("☁️   Clouds: %s\n", cloudSummary(r.Clouds))
-	if len(r.Weather) > 0 {
-		fmt.Printf("🌩️   Weather: %s\n", strings.Join(r.Weather, ", "))
-	}
 	fmt.Println()
 }
 
 func printHumanTAF(r aviation.Response) {
-	fmt.Printf("📅  %s TAF (Issued: %s | Valid: %s to %s)\n", r.StationID, r.Time, r.ValidFrom, r.ValidTo)
+	fmt.Printf("TAF %s (Issued: %s | Valid: %s to %s)\n", r.StationID, r.Time, r.ValidFrom, r.ValidTo)
 	for _, fp := range r.Forecast {
-		prefix := "   "
-		if fp.Type == "tempo" {
-			prefix = "   TEMPO "
+		prefix := ""
+		if fp.Type != "" {
+			prefix = fp.Type + " "
 		}
-		fmt.Printf("%s%s-%s: Wind %s%s | Vis %s\n", prefix, fp.StartTime, fp.EndTime, fp.WindDir, fp.WindSpeed, fp.Visibility)
-		fmt.Printf("      Clouds: %s\n", cloudSummary(fp.Clouds))
-		if len(fp.Weather) > 0 {
-			fmt.Printf("      Weather: %s\n", strings.Join(fp.Weather, ", "))
+		end := ""
+		if fp.End != "N/A" {
+			end = " → " + fp.End
+		}
+		fmt.Printf("  %s%s%s: Wind %s%s | Vis %s\n", prefix, fp.Start, end, fp.WindDir, fp.WindSpeed, fp.Visibility)
+		if len(fp.Clouds) > 0 {
+			fmt.Printf("     Clouds: %s\n", cloudSummary(fp.Clouds))
 		}
 	}
 	fmt.Println()

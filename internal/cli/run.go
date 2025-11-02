@@ -3,6 +3,7 @@ package cli
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
@@ -12,66 +13,76 @@ import (
 )
 
 func Run(cmd *cobra.Command, args []string) error {
-	station := "KJFK" // Default to KJFK for demo
+	// ---- 1. Resolve station (default KJFK) ----
+	station := "KJFK"
 	if len(args) > 0 {
 		station = strings.ToUpper(args[0])
 	}
 
-	dataType, _ := cmd.Flags().GetString("type")
-	output, _ := cmd.Flags().GetString("output")
+	// ---- 2. Flags ----
+	dataType, _ := cmd.Flags().GetString("type") // metar | taf | both
+	output, _ := cmd.Flags().GetString("output") // human | raw | json
 	verbose, _ := cmd.Flags().GetBool("verbose")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 12*time.Second)
 	defer cancel()
 
-	var metarRaw, tafRaw []byte
-	var metarErr, tafErr error
-	var metar aviation.Response
-	var taf aviation.Response
+	// ---- 3. Fetch raw payloads ----
+	var (
+		metarRaw []byte
+		tafRaw   []byte
+		metarErr error
+		tafErr   error
+	)
 
 	switch dataType {
 	case "metar":
 		metarRaw, metarErr = aviation.FetchMETAR(ctx, station)
-		if metarErr != nil {
-			return fmt.Errorf("failed to fetch METAR: %w", metarErr)
-		}
 	case "taf":
 		tafRaw, tafErr = aviation.FetchTAF(ctx, station)
-		if tafErr != nil {
-			return fmt.Errorf("failed to fetch TAF: %w", tafErr)
-		}
 	default: // both
 		metarRaw, metarErr = aviation.FetchMETAR(ctx, station)
 		tafRaw, tafErr = aviation.FetchTAF(ctx, station)
-		if metarErr != nil && tafErr != nil {
-			return fmt.Errorf("both METAR and TAF failed: %v; %v", metarErr, tafErr)
-		}
 	}
 
+	// ---- 4. Verbose mode – dump raw JSON and exit ----
 	if verbose {
 		if dataType == "metar" || dataType == "both" {
 			if metarErr == nil {
-				fmt.Println("METAR:", string(metarRaw))
+				fmt.Println("=== METAR raw JSON ===")
+				os.Stdout.Write(metarRaw)
+				fmt.Println()
 			}
 		}
 		if dataType == "taf" || dataType == "both" {
 			if tafErr == nil {
-				fmt.Println("TAF:", string(tafRaw))
+				fmt.Println("=== TAF raw JSON ===")
+				os.Stdout.Write(tafRaw)
+				fmt.Println()
 			}
 		}
 		return nil
 	}
 
+	// ---- 5. Parse what we successfully fetched ----
+	var metar aviation.Response
+	var taf aviation.Response
+
 	if dataType == "metar" || dataType == "both" {
-		if metarErr == nil {
+		if metarErr != nil {
+			fmt.Fprintf(os.Stderr, "METAR fetch failed: %v\n", metarErr)
+		} else {
 			metar, metarErr = aviation.ParseMETAR(metarRaw)
 			if metarErr != nil {
 				return fmt.Errorf("failed to parse METAR: %w", metarErr)
 			}
 		}
 	}
+
 	if dataType == "taf" || dataType == "both" {
-		if tafErr == nil {
+		if tafErr != nil {
+			fmt.Fprintf(os.Stderr, "TAF fetch failed: %v\n", tafErr)
+		} else {
 			taf, tafErr = aviation.ParseTAF(tafRaw)
 			if tafErr != nil {
 				return fmt.Errorf("failed to parse TAF: %w", tafErr)
@@ -79,6 +90,7 @@ func Run(cmd *cobra.Command, args []string) error {
 		}
 	}
 
+	// ---- 6. Print ----
 	format.PrintAviation(metar, taf, format.OutputFormat(output))
 	return nil
 }

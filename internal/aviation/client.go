@@ -34,6 +34,8 @@ func fetch(ctx context.Context, endpoint, station string) ([]byte, error) {
 	q := u.Query()
 	q.Set("ids", station)
 	q.Set("format", "json")
+	q.Set("mostRecent", "true")  // <-- important for METAR
+	q.Set("hoursBeforeNow", "2") // optional: last 2 hours
 	u.RawQuery = q.Encode()
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
