@@ -12,6 +12,9 @@ import (
 )
 
 func TestFetchMETAR_Success(t *testing.T) {
+
+	var baseURL = "https://aviationweather.gov/api/data"
+
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.Write([]byte(`{"data":{"METAR":[{"raw_text":"KJFK 011200Z ...","station_id":"KJFK","fltCat":"VFR"}]}}`))

@@ -9,8 +9,6 @@ import (
 	"time"
 )
 
-const baseURL = "https://aviationweather.gov/api/data"
-
 var client = &http.Client{
 	Timeout: 8 * time.Second,
 	Transport: &http.Transport{

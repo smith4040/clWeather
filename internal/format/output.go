@@ -44,6 +44,11 @@ func PrintAviation(metar, taf aviation.Response, format OutputFormat) {
 		if taf.StationID != "" {
 			printHumanTAF(taf)
 		}
+
+		if metar.StationID != "" {
+			fmt.Println(strings.Repeat("─", 80))
+			PrintFlightCategoryTable(metar)
+		}
 	}
 }
 
