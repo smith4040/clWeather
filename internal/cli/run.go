@@ -24,42 +24,61 @@ func Run(cmd *cobra.Command, args []string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	var data []byte
-	var err error
+	var metarRaw, tafRaw []byte
+	var metarErr, tafErr error
+	var metar aviation.Response
+	var taf aviation.Response
+
 	switch dataType {
 	case "metar":
-		data, err = aviation.FetchMETAR(ctx, station)
+		metarRaw, metarErr = aviation.FetchMETAR(ctx, station)
+		if metarErr != nil {
+			return fmt.Errorf("failed to fetch METAR: %w", metarErr)
+		}
 	case "taf":
-		data, err = aviation.FetchTAF(ctx, station)
-	default:
-		// Fetch both
-		metar, _ := aviation.FetchMETAR(ctx, station)
-		taf, _ := aviation.FetchTAF(ctx, station)
-		data = append(metar, taf...) // Simple concat for verbose; parse separately below
-		if err != nil {
-			return fmt.Errorf("failed to fetch data: %w", err)
+		tafRaw, tafErr = aviation.FetchTAF(ctx, station)
+		if tafErr != nil {
+			return fmt.Errorf("failed to fetch TAF: %w", tafErr)
+		}
+	default: // both
+		metarRaw, metarErr = aviation.FetchMETAR(ctx, station)
+		tafRaw, tafErr = aviation.FetchTAF(ctx, station)
+		if metarErr != nil && tafErr != nil {
+			return fmt.Errorf("both METAR and TAF failed: %v; %v", metarErr, tafErr)
 		}
 	}
 
 	if verbose {
-		fmt.Println(string(data))
+		if dataType == "metar" || dataType == "both" {
+			if metarErr == nil {
+				fmt.Println("METAR:", string(metarRaw))
+			}
+		}
+		if dataType == "taf" || dataType == "both" {
+			if tafErr == nil {
+				fmt.Println("TAF:", string(tafRaw))
+			}
+		}
 		return nil
 	}
 
-	var metarData, tafData aviation.Response
-	if dataType == "both" || dataType == "metar" {
-		metarData, err = aviation.ParseMETAR(data) // Reuse data for metar if both
-		if err != nil {
-			return fmt.Errorf("failed to parse METAR: %w", err)
+	if dataType == "metar" || dataType == "both" {
+		if metarErr == nil {
+			metar, metarErr = aviation.ParseMETAR(metarRaw)
+			if metarErr != nil {
+				return fmt.Errorf("failed to parse METAR: %w", metarErr)
+			}
 		}
 	}
-	if dataType == "both" || dataType == "taf" {
-		tafData, err = aviation.ParseTAF(data) // Reuse for taf if both
-		if err != nil {
-			return fmt.Errorf("failed to parse TAF: %w", err)
+	if dataType == "taf" || dataType == "both" {
+		if tafErr == nil {
+			taf, tafErr = aviation.ParseTAF(tafRaw)
+			if tafErr != nil {
+				return fmt.Errorf("failed to parse TAF: %w", tafErr)
+			}
 		}
 	}
 
-	format.PrintAviation(metarData, tafData, format.OutputFormat(output))
+	format.PrintAviation(metar, taf, format.OutputFormat(output))
 	return nil
 }

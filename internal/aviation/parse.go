@@ -6,6 +6,11 @@ import (
 	"github.com/tidwall/gjson"
 )
 
+// ---------------------------------------------------------------------
+// NOTE: The AWC API returns a **plain JSON array** for a single station:
+//   [{"raw_text":"KJFK 011200Z ...","station_id":"KJFK",...}]
+// ---------------------------------------------------------------------
+
 type Response struct {
 	RawText     string
 	StationID   string
@@ -20,7 +25,7 @@ type Response struct {
 	Weather     []string
 	Barometer   string
 	Elevation   string
-	FltCat      string // Flight Category: VFR, IFR, MVFR, LIFR
+	FltCat      string // VFR / MVFR / IFR / LIFR
 	// TAF-specific
 	ValidFrom string
 	ValidTo   string
@@ -28,12 +33,12 @@ type Response struct {
 }
 
 type Cloud struct {
-	Type string // e.g., FEW, SCT, BKN
-	Base int    // feet
+	Type string // FEW, SCT, BKN, OVC
+	Base int    // feet AGL
 }
 
 type ForecastPeriod struct {
-	Type       string // forecast or tempo
+	Type       string
 	StartTime  string
 	EndTime    string
 	WindDir    string
@@ -43,13 +48,17 @@ type ForecastPeriod struct {
 	Weather    []string
 }
 
+// ---------------------------------------------------------------------
+// METAR
+// ---------------------------------------------------------------------
 func ParseMETAR(data []byte) (Response, error) {
 	jsonStr := string(data)
 	if !gjson.Valid(jsonStr) {
 		return Response{}, fmt.Errorf("invalid JSON")
 	}
 
-	path := "data.METAR.0"
+	// First element of the array (index 0)
+	path := "0"
 	if !gjson.Get(jsonStr, path).Exists() {
 		return Response{}, fmt.Errorf("no METAR data")
 	}
@@ -58,48 +67,46 @@ func ParseMETAR(data []byte) (Response, error) {
 		RawText:     gjson.Get(jsonStr, path+".raw_text").String(),
 		StationID:   gjson.Get(jsonStr, path+".station_id").String(),
 		Time:        gjson.Get(jsonStr, path+".observation_time").String(),
-		Temperature: gjson.Get(jsonStr, path+".temperature").String() + "°C",
-		Dewpoint:    gjson.Get(jsonStr, path+".dewpoint").String() + "°C",
-		WindDir:     gjson.Get(jsonStr, path+".wind.direction").String(),
-		WindSpeed:   gjson.Get(jsonStr, path+".wind.speed").String() + " KT",
-		WindGust:    gjson.Get(jsonStr, path+".wind.gust").String() + " KT",
-		Visibility:  gjson.Get(jsonStr, path+".visibility.statute_miles").String() + " SM",
-		Barometer:   gjson.Get(jsonStr, path+".barometer.value").String() + " inHg",
-		Elevation:   gjson.Get(jsonStr, path+".elevation.value").String() + " ft",
-		FltCat:      gjson.Get(jsonStr, path+".fltCat").String(),
+		Temperature: gjson.Get(jsonStr, path+".temp_c").String() + "°C",
+		Dewpoint:    gjson.Get(jsonStr, path+".dewp_c").String() + "°C",
+		WindDir:     gjson.Get(jsonStr, path+".wdir").String(),
+		WindSpeed:   gjson.Get(jsonStr, path+".wspd").String() + "KT",
+		WindGust:    gjson.Get(jsonStr, path+".wgust").String() + "KT",
+		Visibility:  gjson.Get(jsonStr, path+".visib").String() + "SM",
+		Barometer:   gjson.Get(jsonStr, path+".altim").String() + "inHg",
+		Elevation:   gjson.Get(jsonStr, path+".elev").String() + "ft",
+		FltCat:      gjson.Get(jsonStr, path+".flight_category").String(),
 	}
 
-	// Clouds array
-	clouds := gjson.Get(jsonStr, path+".clouds.#")
-	for i := 0; i < int(clouds.Num); i++ {
-		cPath := fmt.Sprintf("%s.clouds.%d", path, i)
+	// Clouds
+	gjson.Get(jsonStr, path+".sky_condition.#").ForEach(func(_, v gjson.Result) bool {
 		r.Clouds = append(r.Clouds, Cloud{
-			Type: gjson.Get(jsonStr, cPath+".type").String(),
-			Base: int(gjson.Get(jsonStr, cPath+".base").Num),
+			Type: v.Get("cover").String(),
+			Base: int(v.Get("base_agl").Num),
 		})
-	}
+		return true
+	})
 
-	// Weather array
-	weather := gjson.Get(jsonStr, path+".weather.#")
-	for i := 0; i < int(weather.Num); i++ {
-		wPath := fmt.Sprintf("%s.weather.%d", path, i)
-		r.Weather = append(r.Weather, gjson.Get(jsonStr, wPath+".type").String())
-	}
+	// Weather
+	gjson.Get(jsonStr, path+".wx_string").String() // fallback to raw if needed
+	// The API doesn't always give an array – just use raw_text for now
 
 	if r.StationID == "" {
-		r.StationID = "Unknown"
+		r.StationID = "UNKNOWN"
 	}
-
 	return r, nil
 }
 
+// ---------------------------------------------------------------------
+// TAF
+// ---------------------------------------------------------------------
 func ParseTAF(data []byte) (Response, error) {
 	jsonStr := string(data)
 	if !gjson.Valid(jsonStr) {
 		return Response{}, fmt.Errorf("invalid JSON")
 	}
 
-	path := "data.TAF.0"
+	path := "0"
 	if !gjson.Get(jsonStr, path).Exists() {
 		return Response{}, fmt.Errorf("no TAF data")
 	}
@@ -108,46 +115,35 @@ func ParseTAF(data []byte) (Response, error) {
 		RawText:   gjson.Get(jsonStr, path+".raw_text").String(),
 		StationID: gjson.Get(jsonStr, path+".station_id").String(),
 		Time:      gjson.Get(jsonStr, path+".issue_time").String(),
-		ValidFrom: gjson.Get(jsonStr, path+".valid_time_from").String(),
-		ValidTo:   gjson.Get(jsonStr, path+".valid_time_to").String(),
+		ValidFrom: gjson.Get(jsonStr, path+".valid_from").String(),
+		ValidTo:   gjson.Get(jsonStr, path+".valid_to").String(),
 	}
 
 	// Forecast periods
-	forecasts := gjson.Get(jsonStr, path+".forecast.#")
-	for i := 0; i < int(forecasts.Num); i++ {
-		fPath := fmt.Sprintf("%s.forecast.%d", path, i)
+	gjson.Get(jsonStr, path+".forecast.#").ForEach(func(_, f gjson.Result) bool {
 		fp := ForecastPeriod{
-			Type:       gjson.Get(jsonStr, fPath+".type").String(),
-			StartTime:  gjson.Get(jsonStr, fPath+".start_time").String(),
-			EndTime:    gjson.Get(jsonStr, fPath+".end_time").String(),
-			WindDir:    gjson.Get(jsonStr, fPath+".wind.direction").String(),
-			WindSpeed:  gjson.Get(jsonStr, fPath+".wind.speed").String() + " KT",
-			Visibility: gjson.Get(jsonStr, fPath+".visibility.statute_miles").String() + " SM",
+			Type:       f.Get("change_indicator").String(),
+			StartTime:  f.Get("time_becoming").String(),
+			WindDir:    f.Get("wind_dir_degrees").String(),
+			WindSpeed:  f.Get("wind_speed_kt").String() + "KT",
+			Visibility: f.Get("visibility_statute_mi").String() + "SM",
 		}
 
 		// Clouds in forecast
-		fClouds := gjson.Get(jsonStr, fPath+".clouds.#")
-		for j := 0; j < int(fClouds.Num); j++ {
-			cPath := fmt.Sprintf("%s.clouds.%d", fPath, j)
+		f.Get("sky_condition.#").ForEach(func(_, c gjson.Result) bool {
 			fp.Clouds = append(fp.Clouds, Cloud{
-				Type: gjson.Get(jsonStr, cPath+".type").String(),
-				Base: int(gjson.Get(jsonStr, cPath+".base").Num),
+				Type: c.Get("cover").String(),
+				Base: int(c.Get("base_agl").Num),
 			})
-		}
-
-		// Weather in forecast
-		fWeather := gjson.Get(jsonStr, fPath+".weather.#")
-		for j := 0; j < int(fWeather.Num); j++ {
-			wPath := fmt.Sprintf("%s.weather.%d", fPath, j)
-			fp.Weather = append(fp.Weather, gjson.Get(jsonStr, wPath+".type").String())
-		}
+			return true
+		})
 
 		r.Forecast = append(r.Forecast, fp)
-	}
+		return true
+	})
 
 	if r.StationID == "" {
-		r.StationID = "Unknown"
+		r.StationID = "UNKNOWN"
 	}
-
 	return r, nil
 }
