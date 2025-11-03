@@ -9,13 +9,7 @@ import (
 	"time"
 )
 
-var client = &http.Client{
-	Timeout: 8 * time.Second,
-	Transport: &http.Transport{
-		Proxy:             http.ProxyFromEnvironment,
-		DisableKeepAlives: true,
-	},
-}
+var client = &http.Client{Timeout: 10 * time.Second}
 
 func FetchMETAR(ctx context.Context, station string) ([]byte, error) {
 	return fetch(ctx, "metar", station)
@@ -26,23 +20,15 @@ func FetchTAF(ctx context.Context, station string) ([]byte, error) {
 }
 
 func fetch(ctx context.Context, endpoint, station string) ([]byte, error) {
-	u := url.URL{
-		Scheme: "https",
-		Host:   "aviationweather.gov",
-		Path:   fmt.Sprintf("/api/data/%s", endpoint),
-	}
+	u := url.URL{Scheme: "https", Host: "aviationweather.gov", Path: "/api/data/" + endpoint}
 	q := u.Query()
 	q.Set("ids", station)
 	q.Set("format", "json")
-	q.Set("mostRecent", "true")  // <-- important for METAR
-	q.Set("hoursBeforeNow", "2") // optional: last 2 hours
+	q.Set("mostRecent", "true")
 	u.RawQuery = q.Encode()
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("User-Agent", "clWeather-Aviation/1.0 (+https://github.com/smith4040/clWeather)")
+	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
+	req.Header.Set("User-Agent", "clWeather/1.0")
 
 	resp, err := client.Do(req)
 	if err != nil {
@@ -50,21 +36,12 @@ func fetch(ctx context.Context, endpoint, station string) ([]byte, error) {
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode == http.StatusTooManyRequests {
-		return nil, fmt.Errorf("rate limit exceeded (HTTP 429); try again in 1 min")
+	if resp.StatusCode == 429 {
+		return nil, fmt.Errorf("rate limit (429)")
 	}
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("HTTP %d: %s", resp.StatusCode, resp.Status)
-	}
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
+	if resp.StatusCode != 200 {
+		return nil, fmt.Errorf("HTTP %d", resp.StatusCode)
 	}
 
-	if len(body) == 0 {
-		return nil, fmt.Errorf("no data for station %s", station)
-	}
-
-	return body, nil
+	return io.ReadAll(resp.Body)
 }
