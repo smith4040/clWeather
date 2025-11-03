@@ -1,4 +1,3 @@
-// internal/aviation/parse.go
 package aviation
 
 import (
@@ -11,7 +10,7 @@ import (
 type Response struct {
 	RawText     string
 	StationID   string
-	Time        string // human-readable or Unix
+	Time        string // Issued / Observed
 	Temperature string
 	Dewpoint    string
 	WindDir     string
@@ -33,14 +32,16 @@ type Cloud struct {
 }
 
 type ForecastPeriod struct {
-	Type       string // FM, TEMPO, BECMG, PROB
-	Start      string
-	End        string
-	WindDir    string
-	WindSpeed  string
-	Visibility string
-	Clouds     []Cloud
-	Weather    []string
+	Type        string // FM, PROB, null
+	Start       string
+	End         string
+	WindDir     string // 180, VRB, null
+	WindSpeed   string // 10KT, null
+	WindGust    string // 24KT, null
+	Visibility  string
+	Clouds      []Cloud
+	Weather     []string // -RA, etc.
+	Probability string   // 30, null
 }
 
 func ParseMETAR(data []byte) (Response, error) {
@@ -66,11 +67,20 @@ func ParseMETAR(data []byte) (Response, error) {
 		FltCat:      gjson.Get(jsonStr, path+".fltCat").String(),
 	}
 
+	// Gust if present
+	if gjson.Get(jsonStr, path+".wgst").Exists() {
+		r.WindGust = fmt.Sprintf("%dKT", int(gjson.Get(jsonStr, path+".wgst").Float()))
+	}
+
 	// Clouds
 	gjson.Get(jsonStr, path+".clouds.#").ForEach(func(_, v gjson.Result) bool {
+		base := int(v.Get("base").Float())
+		if base == 0 {
+			base = 100 // treat as 001
+		}
 		r.Clouds = append(r.Clouds, Cloud{
 			Type: v.Get("cover").String(),
-			Base: int(v.Get("base").Float()),
+			Base: base,
 		})
 		return true
 	})
@@ -98,20 +108,45 @@ func ParseTAF(data []byte) (Response, error) {
 	r := Response{
 		RawText:   gjson.Get(jsonStr, path+".rawTAF").String(),
 		StationID: gjson.Get(jsonStr, path+".icaoId").String(),
-		Time:      formatISO(issueTime), // e.g., 2025-11-02T02:21:00.000Z
+		Time:      formatISO(issueTime),
 		ValidFrom: formatUnixTime(validFrom),
 		ValidTo:   formatUnixTime(validTo),
 	}
 
-	// Parse each forecast period
+	// Parse each forecast period from `fcsts`
 	gjson.Get(jsonStr, path+".fcsts.#").ForEach(func(_, f gjson.Result) bool {
+		fcstChange := f.Get("fcstChange").String()
+		prob := f.Get("probability").String()
+
+		// Wind
+		wdir := f.Get("wdir").String()
+		wspd := int(f.Get("wspd").Float())
+		wgst := int(f.Get("wgst").Float())
+
 		fp := ForecastPeriod{
-			Type:       f.Get("fcstChange").String(), // FM, TEMPO, etc.
-			Start:      formatUnixTime(f.Get("timeFrom").Int()),
-			End:        formatUnixTime(f.Get("timeTo").Int()),
-			WindDir:    f.Get("wdir").String(),
-			WindSpeed:  fmt.Sprintf("%dKT", int(f.Get("wspd").Float())),
-			Visibility: formatVis(f.Get("visib").String()),
+			Type:        fcstChange,
+			Probability: prob,
+			Start:       formatUnixTime(f.Get("timeFrom").Int()),
+			End:         formatUnixTime(f.Get("timeTo").Int()),
+			Visibility:  formatVis(f.Get("visib").String()),
+		}
+
+		// Wind
+		if wdir == "VRB" {
+			fp.WindDir = "VRB"
+		} else if wdir != "" {
+			fp.WindDir = wdir
+		}
+		if wspd > 0 {
+			fp.WindSpeed = fmt.Sprintf("%dKT", wspd)
+		}
+		if wgst > 0 {
+			fp.WindGust = fmt.Sprintf("%dKT", wgst)
+		}
+
+		// Weather
+		if wx := f.Get("wxString").String(); wx != "" {
+			fp.Weather = append(fp.Weather, wx)
 		}
 
 		// Clouds
@@ -133,9 +168,7 @@ func ParseTAF(data []byte) (Response, error) {
 	return r, nil
 }
 
-// ---------------------------------------------------------------
 // HELPERS
-// ---------------------------------------------------------------
 func formatUnixTime(ts int64) string {
 	if ts == 0 {
 		return "N/A"
@@ -152,7 +185,10 @@ func formatISO(s string) string {
 }
 
 func formatVis(v string) string {
-	if v == "" || v == "6+" {
+	if v == "" {
+		return "10+SM"
+	}
+	if v == "6+" {
 		return "10+SM"
 	}
 	return v + "SM"
